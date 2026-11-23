@@ -92,6 +92,7 @@ class StableZHome:
             retries += 1
 
         if retries > max_retries:
+            self.gcode.run_script_from_command('_CLIENT_LINEAR_MOVE X=-100 Y=10 Z=15 F=7200')
             raise self.gcode.error('Max retries exceeded\n')
 
 
