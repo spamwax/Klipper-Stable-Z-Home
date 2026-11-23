@@ -26,6 +26,19 @@ class StableZHome:
     cmd_STABLE_Z_HOME_help = (
         "Repeatedly home Z until the Z stepper position stabilizes")
     def cmd_STABLE_Z_HOME(self, gcmd):
+        try:
+            self._stable_z_home(gcmd)
+        except Exception:
+            # The STABLE_Z_HOME wrapper macro set batch-mode flags that the
+            # homing_override relies on; an error aborts that macro before it
+            # can clear them, leaving the next G28 in a dangerous state.
+            try:
+                self.gcode.run_script_from_command('_STABLEZHOME_END_BATCH')
+            except Exception:
+                logging.exception("Failed to reset STABLEZHOME batch mode")
+            raise
+
+    def _stable_z_home(self, gcmd):
         max_retries = gcmd.get_int('RETRIES', self.default_max_retries,
                                    minval=0)
         retry_tolerance = gcmd.get_float('RETRY_TOLERANCE',
