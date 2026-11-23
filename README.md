@@ -117,6 +117,12 @@ The following parameters can be adjusted in the `[stable_z_home]` section:
 [stable_z_home]
 #gcode:
 #  The G-code to run before each probe attempt. The default is none.
+#error_gcode:
+#  The G-code to run if STABLE_Z_HOME fails for any reason (max retries
+#  exceeded, X/Y not homed, a homing error, ...), before the error is
+#  reported. Use it to reset macro state or move the toolhead to safety.
+#  Errors raised by this G-code are logged and the original error is
+#  still reported. The default is none.
 #retries:
 #  The maximum number of probe attempts allowed. The default is 20.
 #window:

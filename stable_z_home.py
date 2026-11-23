@@ -15,6 +15,7 @@ class StableZHome:
         self.gcode = self.printer.lookup_object('gcode')
         gcode_macro = self.printer.load_object(config, 'gcode_macro')
         self.before_homing_gcode = gcode_macro.load_template(config, 'gcode')
+        self.error_gcode = gcode_macro.load_template(config, 'error_gcode', '')
         self.default_max_retries = config.getint("retries", 20, minval=0)
         self.default_retry_tolerance = \
             config.getfloat("retry_tolerance", 1 / 400., above=1/1000.)
@@ -29,13 +30,12 @@ class StableZHome:
         try:
             self._stable_z_home(gcmd)
         except Exception:
-            # The STABLE_Z_HOME wrapper macro set batch-mode flags that the
-            # homing_override relies on; an error aborts that macro before it
-            # can clear them, leaving the next G28 in a dangerous state.
+            # Give the config a chance to clean up (reset macro state, move
+            # the toolhead away, ...) before the error aborts the caller.
             try:
-                self.gcode.run_script_from_command('_STABLEZHOME_END_BATCH')
+                self.gcode.run_script_from_command(self.error_gcode.render())
             except Exception:
-                logging.exception("Failed to reset STABLEZHOME batch mode")
+                logging.exception("Exception running error_gcode")
             raise
 
     def _stable_z_home(self, gcmd):
@@ -105,7 +105,6 @@ class StableZHome:
             retries += 1
 
         if retries > max_retries:
-            self.gcode.run_script_from_command('_CLIENT_LINEAR_MOVE X=-100 Y=10 Z=15 F=7200')
             raise self.gcode.error('Max retries exceeded\n')
 
 
